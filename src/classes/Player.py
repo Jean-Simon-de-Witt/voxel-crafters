@@ -5,6 +5,11 @@ class Player:
         self._x: float = x
         self._y: float = y
         self._z: float = z
+        
+        self._pitch: float = 0.0
+        self._yaw: float = 0.0
+        self._mouse_sensitivity: float = 0.2
+        
         self._speed: int = speed
         self._jump_height: int = jump_height
         
@@ -14,6 +19,46 @@ class Player:
         
         self._health: float = health
         self._hunger: float = hunger
+        
+    def _move(self, time_passed_seconds: float) -> None:
+        self._x += self._change_x * time_passed_seconds
+        self._y += self._change_y * time_passed_seconds
+        self._z += self._change_z * time_passed_seconds
+    
+    def _update_survival_stats(self, time_passed_seconds: float):
+        
+        hunger_depletion_rate = 0.5
+        self._hunger -= hunger_depletion_rate * time_passed_seconds
+        
+        if self._hunger <= 0:
+            self._hunger = 0
+            health_depletion_rate = 1.0
+            self._health -= health_depletion_rate * time_passed_seconds
+      
+    def _handle_inputs(self) -> None:
+        keys = pygame.key.get_pressed()
+        
+        self._change_x = 0
+        self._change_z = 0
+        
+        if keys[pygame.K_w]:
+            self.set_change_z(-self._speed)
+        
+        if keys[pygame.K_s]:
+            self.set_change_z(self._speed)
+            
+        if keys[pygame.K_a]:
+            self.set_change_x(-self._speed)
+            
+        if keys[pygame.K_d]:
+            self.set_change_x(self._speed)
+            
+    def update(self, delta_time_ms: int) -> None:
+        time_passed_seconds = delta_time_ms / 1000.0
+        
+        self._handle_inputs()
+        self._move(time_passed_seconds)
+        self._update_survival_stats(time_passed_seconds)
         
     def set_x(self, x: float) -> None:
         self._x = x
@@ -90,38 +135,3 @@ class Player:
     
     def get_hunger(self) -> float:
         return self._hunger
-    
-    def move(self) -> None:
-        self._x += self._change_x
-        self._y += self._change_y
-        self._z += self._change_z
-    
-    def update_survival_stats(self, time_passed):
-        
-        hunger_depletion_rate = 0.5
-        self._hunger -= hunger_depletion_rate * (time_passed / 1000.0)
-        
-        if self._hunger <= 0:
-            self._hunger = 0
-            health_depletion_rate = 1.0
-            self._health -= health_depletion_rate * (time_passed / 1000.0)
-      
-    def handle_inputs(self) -> None:
-        keys = pygame.keys.get_pressed()
-        
-        if keys[pygame.K_w]:
-            self.set_change_x(self._speed)
-        
-        if keys[pygame.K_s]:
-            self.set_change_x(-self._speed)
-            
-        if keys[pygame.K_a]:
-            self.set_change_z(-self.speed)
-            
-        if keys[pygame.K_d]:
-            self.set_change_z(self.speed)
-            
-    def update(self) -> None:
-        self.handle_inputs()
-        self.move()
-        self.update_survival_stats()

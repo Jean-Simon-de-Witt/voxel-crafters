@@ -1,10 +1,10 @@
-from classes.Texture import Texture
-from classes.TextureSet import TextureSet
+from src.classes.Texture import Texture
+from src.classes.TextureSet import TextureSet
 
-class textures:
-    grass_top: Texture =  Texture("")
-    grass_side: Texture = Texture("")
-    grass_bottom: Texture = Texture("")
+class Textures:
+    grass_top: Texture =  Texture("src\\assets\\textures\\dirt_pack\\grasstop.png")
+    grass_side: Texture = Texture("src\\assets\\textures\\dirt_pack\\grass.png")
+    grass_bottom: Texture = Texture("src\\assets\\textures\\dirt_pack\\dirt.png")
     
-class texture_sets:
-    grass: TextureSet = TextureSet(textures.grass_top, textures.grass_side, textures.grass_bottom)
+class TextureSets:
+    grass: TextureSet = TextureSet(Textures.grass_top, Textures.grass_side, Textures.grass_bottom)

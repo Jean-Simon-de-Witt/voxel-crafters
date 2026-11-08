@@ -15,7 +15,7 @@ def load_assets():
     from src.classes.World import World
     from src.classes.Player import Player
     
-    return {"world": World(20, 20), "player": Player(0, 2, 5, speed = 10, jump_height = 5)}
+    return {"world": World(20, 20, 3), "player": Player(0, 2, 5, speed = 10, jump_height = 5)}
     
 def main():
     pygame.init()

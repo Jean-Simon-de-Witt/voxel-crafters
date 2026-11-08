@@ -21,10 +21,12 @@ def main():
     pygame.init()
     pygame.mixer.init()
     
-    display = (800, 600)
+    display = (1920, 1080)
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
     init_opengl(display)
     
+    pygame.event.set_grab(True)
+    pygame.mouse.set_visible(False)
     assets = load_assets()
     
     flat_world = assets.get("world")
@@ -38,16 +40,22 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                running = False
          
-        player.update(delta_time)
+        player.update(delta_time, flat_world)
                 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
+        rot = player.get_rotation()
+        glRotatef(rot['pitch'], 1, 0, 0)
+        glRotatef(rot['yaw'], 0, 1, 0)
+        
         pos = player.get_position()
-        gluLookAt(pos['x'], pos['y'], pos['z'], pos['x'], pos['y'], pos['z'] - 1, 0, 1, 0)
+        glTranslate(-pos['x'], -pos['y'], -pos['z'])
         
         flat_world.draw()
         

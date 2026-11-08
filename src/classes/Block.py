@@ -1,14 +1,20 @@
 from src.classes.TextureSet import TextureSet
 from src.classes.Material import Material
 from src.classes.Shape import Shape
+from src.classes.Collider import Collider
 from OpenGL.GL import *
 
 class Block:
-    def __init__(self, x: float, y: float, z: float, textures: TextureSet, material: Material, shape: Shape, durability: int):
+    def __init__(self, x: float, y: float, z: float, width: float, height: float, depth: float, textures: TextureSet, material: Material, shape: Shape, durability: int):
         self._x: float = x
         self._y: float = y
         self._z: float = z
         
+        self._width: float = width
+        self._height: float = height
+        self._depth: float = depth
+        
+        self._collider: Collider = Collider(x, y, z, width, height, depth)
         self._textures: TextureSet = textures
         self._material: Material = material
         self._shape: Shape = shape
@@ -48,6 +54,8 @@ class Block:
         self._z = z
         self._world_vertices = self._calculate_world_vertices()
         
+        self._collider.update_position(x, y, z)
+        
     def set_x(self, x: float) -> None:
         self._x = x
         
@@ -77,6 +85,21 @@ class Block:
     
     def get_z(self) -> float:
         return self._z
+    
+    def get_width(self) -> float:
+        return self._width
+    
+    def get_height(self) -> float:
+        return self._height
+    
+    def get_depth(self) -> float:
+        return self._depth
+    
+    def get_dimensions(self) -> dict[str, float]:
+        return {"width": self._width, "height": self._height, "depth": self._depth}
+    
+    def get_collider(self) -> Collider:
+        return self._collider
     
     def get_textures(self) -> TextureSet:
         return self._textures

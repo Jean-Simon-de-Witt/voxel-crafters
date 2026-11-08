@@ -1,10 +1,11 @@
+from src.classes.Block import Block
 from src.classes.blocks import Grass
 
 class World:
     def __init__(self, size_x: int, size_z: int):
         self._size_x: int = size_x
         self._size_z: int = size_z
-        self._blocks = []
+        self._blocks: list[Block] = []
         
         self._generate_flat_world()
         
@@ -20,5 +21,8 @@ class World:
                 
     def draw(self):
         for block in self._blocks:
-            block.draw()    
+            block.draw()
+            
+    def get_blocks(self) -> list[Block]:
+        return self._blocks
     

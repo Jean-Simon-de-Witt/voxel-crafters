@@ -2,101 +2,52 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from src.classes.states import MainMenuState
 
-def init_opengl(display_size):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(45, (display_size[0] / display_size[1]), 0.1, 50.0)
-    
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_TEXTURE_2D)
-    
-def load_assets():
-    from src.classes.World import World
-    from src.classes.Player import Player
-    
-    return {"world": World(20, 20, 3), "player": Player(0, 0, 0, speed = 10, jump_height = 5)}
-
-def draw_crosshair(display_size):
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    glOrtho(0, display_size[0], display_size[1], 0, -1, 1)
-    
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    cx, cy = display_size[0] // 2, display_size[1] // 2
-    
-    glDisable(GL_TEXTURE_2D)
-    glColor3f(1.0, 1.0, 1.0)
-    
-    glBegin(GL_LINES)
-    glVertex2f(cx - 10, cy)
-    glVertex2f(cx + 10, cy)
-    glVertex2f(cx, cy - 10)
-    glVertex2f(cx, cy + 10)
-    glEnd()
-    
-    glEnable(GL_TEXTURE_2D)
-    glColor3f(1.0, 1.0, 1.0)
-    
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
-    glPopMatrix()
-    
-def main():
-    pygame.init()
-    pygame.mixer.init()
-    
-    display = (1920, 1080)
-    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    init_opengl(display)
-    
-    pygame.event.set_grab(True)
-    pygame.mouse.set_visible(False)
-    assets = load_assets()
-    
-    flat_world = assets.get("world")
-    player = assets.get("player")
-    
-    clock = pygame.time.Clock()
-    running = True
-    while running:
-        delta_time = clock.tick(60)
+class GameEngine:
+    def __init__(self):
+        pygame.init()
+        pygame.mixer.init()
         
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == KEYDOWN and event.key == K_ESCAPE:
-                running = False
-            if event.type == MOUSEBUTTONDOWN:
-                player.handle_mouse_clicks(event, flat_world)
-         
-        player.update(delta_time, flat_world)
-                
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.display_size = (1920, 1080)
+        self.screen = pygame.display.set_mode(self.display_size, DOUBLEBUF | OPENGL)
+        pygame.display.set_caption("Voxel Engine")
         
-        glMatrixMode(GL_MODELVIEW)
+        self.init_opengl()
+        
+        self.clock = pygame.time.Clock()
+        self.running = True
+        
+        self.active_state = MainMenuState(self)
+        
+    def init_opengl(self):
+        glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
+        gluPerspective(45, (self.display_size[0] / self.display_size[1]), 0.1, 50.0)
         
-        rot = player.get_rotation()
-        glRotatef(rot['pitch'], 1, 0, 0)
-        glRotatef(rot['yaw'], 0, 1, 0)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_TEXTURE_2D)
         
-        pos = player.get_position()
+    def change_state(self, new_state):
+        self.active_state = new_state
         
-        camera_y = pos['y'] + player.get_eye_height()
-        glTranslate(-pos['x'], -camera_y, -pos['z'])
-        
-        flat_world.draw()
-        draw_crosshair(display)
-        pygame.display.flip()
-        
-    pygame.quit()
-    
+    def run(self):
+        while self.running:
+            delta_time = self.clock.tick(60)
+            
+            events = pygame.event.get()
+            for event in events:
+                if event.type == QUIT:
+                    self.running = False
+                    
+            if self.active_state:
+                self.active_state.handle_events(events)
+                self.active_state.update(delta_time)
+                self.active_state.draw(self.display_size)
+                
+            pygame.display.flip()
+        pygame.quit()
+
 if __name__ == "__main__":
-    main()
+    engine = GameEngine()
+    engine.run()

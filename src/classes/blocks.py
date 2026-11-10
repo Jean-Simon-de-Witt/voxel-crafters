@@ -9,7 +9,7 @@ class Grass(Block):
         
 class Stone(Block):
     def __init__(self, x: float, y: float, z: float):
-        super().__init__(z, y, z, 1.0, 1.0, 1.0, TextureSets.stone, Materials.stone, Cube(), 200)
+        super().__init__(x, y, z, 1.0, 1.0, 1.0, TextureSets.stone, Materials.stone, Cube(), 200)
 
 class CoalOre(Block):
     def __init__(self, x: float, y: float, z: float):

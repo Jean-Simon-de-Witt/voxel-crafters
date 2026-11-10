@@ -23,16 +23,40 @@ class Block:
         
         self._world_vertices = self._calculate_world_vertices()
         
+        self._visible_faces = [0, 1, 2, 3, 4, 5]
+        
     def _calculate_world_vertices(self) -> tuple:
         world_verts = []
         for vertex in self._shape.get_vertices():
             world_verts.append((vertex[0] + self._x, vertex[1] + self._y, vertex[2] + self._z))
         return tuple(world_verts)
     
-    def draw(self) -> None:
-        tex_coords = self._shape.get_texture_coordinates()
+    def update_visibility(self, world) -> None:
+        self._visible_faces = []
+        x, y, z = int(self._x), int(self._y), int(self._z)
         
-        for face_index, face in enumerate(self._shape.get_faces()):
+        if world.get_block_at(x, y, z - 1) is None:
+            self._visible_faces.append(0)
+        if world.get_block_at(x, y, z + 1) is None:
+            self._visible_faces.append(1)
+        if world.get_block_at(x - 1, y, z) is None:
+            self._visible_faces.append(2)
+        if world.get_block_at(x + 1, y, z) is None:
+            self._visible_faces.append(3)
+        if world.get_block_at(x, y + 1, z) is None:
+            self._visible_faces.append(4)
+        if world.get_block_at(x, y - 1, z) is None:
+            self._visible_faces.append(5)
+    
+    def draw(self) -> None:
+        if not self._visible_faces:
+            return
+        
+        tex_coords = self._shape.get_texture_coordinates()
+        all_faces = self._shape.get_faces()
+        
+        for face_index in self._visible_faces:
+            face = all_faces[face_index]
             if face_index == 4:
                 texture_id = self._textures.get_top().get_texture_id()
             elif face_index == 5:

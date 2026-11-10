@@ -8,7 +8,7 @@ class Player:
         self._y: float = y
         self._z: float = z
         
-        self._collider = Collider(x, y, z, 0.8, 2.0, 0.8)
+        self._collider = Collider(x, y, z, 0.8, 1.8, 0.8)
         
         self._pitch: float = 0.0
         self._yaw: float = 0.0
@@ -16,6 +16,7 @@ class Player:
         
         self._speed: int = speed
         self._jump_height: int = jump_height
+        self._reach: float = 5.0
         
         self._gravity: float = 15.0
         self._is_on_ground: bool = False
@@ -27,6 +28,58 @@ class Player:
         self._health: float = health
         self._hunger: float = hunger
         
+        self._eye_height = 1.62
+    
+    def _raycast(self, world):
+        yaw_rad = math.radians(self._yaw)
+        pitch_rad = math.radians(self._pitch)
+        
+        dx = math.sin(yaw_rad) * math.cos(pitch_rad)
+        dy = -math.sin(pitch_rad)
+        dz = -math.cos(yaw_rad) * math.cos(pitch_rad)
+        
+        ray_x, ray_y, ray_z = self._x + 0.5, self._y + self._eye_height, self._z + 0.5
+        grid_x, grid_y, grid_z = math.floor(ray_x), math.floor(ray_y), math.floor(ray_z)
+        
+        step_x = 1 if dx > 0 else -1
+        step_y = 1 if dy > 0 else -1
+        step_z = 1 if dz > 0 else -1
+        
+        t_delta_x = abs(1.0 / dx) if dx != 0 else 1e30
+        t_delta_y = abs(1.0 / dy) if dy != 0 else 1e30
+        t_delta_z = abs(1.0 / dz) if dz != 0 else 1e30
+        
+        t_max_x = (grid_x + 1.0 - ray_x) * t_delta_x if dx > 0 else (ray_x - grid_x) * t_delta_x
+        t_max_y = (grid_y + 1.0 - ray_y) * t_delta_y if dy > 0 else (ray_y - grid_y) * t_delta_y
+        t_max_z = (grid_z + 1.0 - ray_z) * t_delta_z if dz > 0 else (ray_z - grid_z) * t_delta_z
+        
+        distance = 0.0
+        hit_normal = (0, 0, 0)
+        
+        while distance < self._reach:
+            if t_max_x < t_max_y and t_max_x < t_max_z:
+                t_max_x += t_delta_x
+                grid_x += step_x
+                distance = t_max_x - t_delta_x
+                hit_normal = (-step_x, 0, 0)
+            elif t_max_y < t_max_z:
+                t_max_y += t_delta_y
+                grid_y += step_y
+                distance = t_max_y - t_delta_y
+                hit_normal = (0, -step_y, 0)
+            else:
+                t_max_z += t_delta_z
+                grid_z += step_z
+                distance = t_max_z - t_delta_z
+                hit_normal = (0, 0, -step_z)
+                
+            target_block = world.get_block_at(grid_x, grid_y, grid_z)
+            
+            if target_block is not None:
+                return target_block, hit_normal
+            
+        return None, None
+    
     def _apply_gravity(self, time_passed_seconds: float) -> None:
         self._change_y -= self._gravity * time_passed_seconds
         
@@ -41,13 +94,25 @@ class Player:
         
         self._is_on_ground = False
         
-        for block in world.get_blocks():
-            if self._collider.intersects(block.get_collider()):
-                if self._change_y < 0:
-                    self._y = block.get_y() + (block.get_height() / 2) + (self._collider.get_height() / 2)
-                    self._change_y = 0
-                    self._is_on_ground = True
-                    break
+        min_x = math.floor(self._x - (self._collider.get_width() / 2) + 0.5)
+        max_x = math.ceil(self._x + (self._collider.get_width() / 2) + 0.5)
+        min_y = math.floor(self._y - (self._collider.get_height() / 2) - 0.1 + 0.5)
+        max_y = math.ceil(self._y + (self._collider.get_height() / 2) + 0.5)
+        min_z = math.floor(self._z - (self._collider.get_depth() / 2) + 0.5)
+        max_z = math.ceil(self._z + (self._collider.get_depth() / 2) + 0.5)
+        
+        for grid_x in range(min_x, max_x + 1):
+            for grid_y in range(min_y, max_y + 1):
+                for grid_z in range(min_z, max_z + 1):
+                    block = world.get_block_at(grid_x, grid_y, grid_z)
+                    
+                    if block is not None:
+                        if self._collider.intersects(block.get_collider()):
+                            if self._change_y < 0:
+                                self._y = block.get_y() + (block.get_height() /2) + (self._collider.get_height() / 2)
+                                self._change_y = 0
+                                self._is_on_ground = True
+                                break
                 
         self._collider.update_position(self._x, self._y, self._z)
     
@@ -73,6 +138,26 @@ class Player:
             self._pitch = -90.0
             
         self._yaw = self._yaw % 360.0
+        
+    def handle_mouse_clicks(self, event, world):
+        if event.button == 1 or event.button == 3:
+            
+            target_block, hit_normal = self._raycast(world)
+            
+            if target_block is not None:
+                if event.button == 1:
+                    world.remove_block(target_block)
+                elif event.button == 3:
+                    place_x = target_block.get_x() + hit_normal[0]
+                    place_y = target_block.get_y() + hit_normal[1]
+                    place_z = target_block.get_z() + hit_normal[2]
+                    from src.classes.Collider import Collider
+                    temp_block_collider = Collider(place_x, place_y, place_z, 1.0, 1.0, 1.0)
+                    
+                    if not self._collider.intersects(temp_block_collider):
+                        from src.classes.blocks import Grass
+                        new_block = Grass(place_x, place_y, place_z)
+                        world.add_block(new_block)
      
     def _handle_inputs(self) -> None:
         keys = pygame.key.get_pressed()
@@ -110,6 +195,8 @@ class Player:
     def update(self, delta_time_ms: int, world) -> None:
         time_passed_seconds = delta_time_ms / 1000.0
         
+        if time_passed_seconds > 0.05:
+            time_passed_seconds = 0.05
         self._handle_mouse()
         self._handle_inputs()
         
@@ -195,3 +282,6 @@ class Player:
     
     def get_hunger(self) -> float:
         return self._hunger
+    
+    def get_eye_height(self) -> float:
+        return self._eye_height

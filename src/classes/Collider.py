@@ -13,18 +13,18 @@ class Collider:
         self._z = z
         
     def intersects(self, other: Collider) -> bool:
-        min_x1 = self._x - (self._width / 2)
-        max_x1 = self._x + (self._width / 2)
-        min_y1 = self._y - (self._height / 2)
-        max_y1 = self._y + (self._height / 2)
-        min_z1 = self._z - (self._depth / 2)
-        max_z1 = self._z + (self._depth / 2)
+        min_x1 = self._x
+        max_x1 = self._x + self._width
+        min_y1 = self._y
+        max_y1 = self._y + self._height
+        min_z1 = self._z
+        max_z1 = self._z + self._depth
         
-        min_x2 = other.get_x() - (other.get_width() / 2)
-        max_x2 = other.get_x() + (other.get_width() / 2)
-        min_y2 = other.get_y() - (other.get_height() / 2)
-        max_y2 = other.get_y() + (other.get_height() / 2)
-        min_z2 = other.get_z() - (other.get_depth() / 2)
+        min_x2 = other.get_x()
+        max_x2 = other.get_x() + other.get_width()
+        min_y2 = other.get_y()
+        max_y2 = other.get_y() + other.get_height()
+        min_z2 = other.get_z()
         max_z2 = other.get_z() + (other.get_depth() / 2)
         
         overlap_x = min_x1 <= max_x2 and max_x1 >= min_x2

@@ -28,6 +28,10 @@ class Player:
         self._health: float = health
         self._hunger: float = hunger
         
+        from src.classes.blocks import Grass, Stone, Wood, Leaves
+        self._inventory = [Grass, Stone, Wood, Leaves]
+        self._selected_block_index = 0
+        
         self._eye_height = 1.62
     
     def _raycast(self, world):
@@ -38,7 +42,7 @@ class Player:
         dy = -math.sin(pitch_rad)
         dz = -math.cos(yaw_rad) * math.cos(pitch_rad)
         
-        ray_x, ray_y, ray_z = self._x + 0.5, self._y + self._eye_height, self._z + 0.5
+        ray_x, ray_y, ray_z = self._x, self._y + self._eye_height, self._z
         grid_x, grid_y, grid_z = math.floor(ray_x), math.floor(ray_y), math.floor(ray_z)
         
         step_x = 1 if dx > 0 else -1
@@ -72,8 +76,9 @@ class Player:
                 grid_z += step_z
                 distance = t_max_z - t_delta_z
                 hit_normal = (0, 0, -step_z)
-                
-            target_block = world.get_block_at(grid_x, grid_y, grid_z)
+            
+            from src.classes.Block import Block
+            target_block: Block = world.get_block_at(grid_x, grid_y, grid_z)
             
             if target_block is not None:
                 return target_block, hit_normal
@@ -94,12 +99,12 @@ class Player:
         
         self._is_on_ground = False
         
-        min_x = math.floor(self._x - (self._collider.get_width() / 2) + 0.5)
-        max_x = math.ceil(self._x + (self._collider.get_width() / 2) + 0.5)
-        min_y = math.floor(self._y - (self._collider.get_height() / 2) - 0.1 + 0.5)
-        max_y = math.ceil(self._y + (self._collider.get_height() / 2) + 0.5)
-        min_z = math.floor(self._z - (self._collider.get_depth() / 2) + 0.5)
-        max_z = math.ceil(self._z + (self._collider.get_depth() / 2) + 0.5)
+        min_x = math.floor(self._x)
+        max_x = math.floor(self._x + self._collider.get_width())
+        min_y = math.floor(self._y - 0.1)
+        max_y = math.floor(self._y + self._collider.get_height())
+        min_z = math.floor(self._z)
+        max_z = math.floor(self._z + self._collider.get_depth())
         
         for grid_x in range(min_x, max_x + 1):
             for grid_y in range(min_y, max_y + 1):
@@ -109,7 +114,7 @@ class Player:
                     if block is not None:
                         if self._collider.intersects(block.get_collider()):
                             if self._change_y < 0:
-                                self._y = block.get_y() + (block.get_height() /2) + (self._collider.get_height() / 2)
+                                self._y = block.get_y() + block.get_height()
                                 self._change_y = 0
                                 self._is_on_ground = True
                                 break
@@ -147,6 +152,7 @@ class Player:
             if target_block is not None:
                 if event.button == 1:
                     world.remove_block(target_block)
+                    target_block.get_material().get_break_sound().play()
                 elif event.button == 3:
                     place_x = target_block.get_x() + hit_normal[0]
                     place_y = target_block.get_y() + hit_normal[1]
@@ -155,9 +161,18 @@ class Player:
                     temp_block_collider = Collider(place_x, place_y, place_z, 1.0, 1.0, 1.0)
                     
                     if not self._collider.intersects(temp_block_collider):
-                        from src.classes.blocks import Grass
-                        new_block = Grass(place_x, place_y, place_z)
+                        from src.classes.blocks import Grass, Stone, Wood, Leaves
+                        match self._selected_block_index:
+                            case 0:
+                                new_block = Grass(place_x, place_y, place_z)
+                            case 1:
+                                new_block = Stone(place_x, place_y, place_z)
+                            case 2:
+                                new_block = Wood(place_x, place_y, place_z)
+                            case 3:
+                                new_block = Leaves(place_x, place_y, place_z)        
                         world.add_block(new_block)
+                        new_block.get_material().get_place_sound().play()
      
     def _handle_inputs(self) -> None:
         keys = pygame.key.get_pressed()
@@ -191,6 +206,11 @@ class Player:
             
         if keys[pygame.K_SPACE] and self._is_on_ground:
             self._change_y = self._jump_height
+            
+        if keys[pygame.K_1]: self._selected_block_index = 0
+        if keys[pygame.K_2]: self._selected_block_index = 1
+        if keys[pygame.K_3]: self._selected_block_index = 2
+        if keys[pygame.K_4]: self._selected_block_index = 3
             
     def update(self, delta_time_ms: int, world) -> None:
         time_passed_seconds = delta_time_ms / 1000.0
@@ -285,3 +305,6 @@ class Player:
     
     def get_eye_height(self) -> float:
         return self._eye_height
+    
+    def get_selected_block_name(self) -> str:
+        return self._inventory[self._selected_block_index].__name__

@@ -159,4 +159,22 @@ class Hotbar(UIElement):
         surface.blit(text_surf, (20, 15))
             
         self._render_surface_to_opengl(surface)
+        
+class Image(UIElement):
+    def __init__(self, x: float, y: float, image_path: str, scale_width: float = None, scale_height: float = None):
+        self._surface = pygame.image.load(image_path).convert_alpha()
+        super().__init__(x - (self._surface.get_width() * scale_width if scale_width is not None else self._surface.get_width()) // 2, y)
+            
+        if scale_width is not None and scale_height is not None:
+            self._surface = pygame.transform.scale(self._surface, (self._surface.get_width() * scale_width, self._surface.get_height() * scale_height))
+            
+    def get_width(self) -> int:
+        return self._surface.get_width()
+    
+    def get_height(self) -> int:
+        return self._surface.get_height()
+            
+        
+    def draw(self):
+        self._render_surface_to_opengl(self._surface)
             

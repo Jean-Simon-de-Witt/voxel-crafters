@@ -2,7 +2,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from src.classes.GameState import GameState
-from src.classes.ui import Label, Button, Hotbar
+from src.classes.ui import Label, Image, Button, Hotbar
 
 def setup_2d_projection(display_size):
     glMatrixMode(GL_PROJECTION)
@@ -27,12 +27,12 @@ class MainMenuState(GameState):
         self._font_btn = pygame.font.SysFont("Arial", 32)
         
         cx = engine.display_size[0] // 2
-        cy = engine.display_size[1] // 2
+        cy = 0
         
-        self._title = Label(cx - 200, cy + 100, "Voxel Crafters", self._font_title)
+        self._title = Image(cx, cy, "src\\assets\\logo.png", 0.5, 0.5)
         
-        self._btn_play: Button = Button(cx - 100, cy, 200, 60, "Play", self._font_btn, self.start_game)
-        self._btn_quit: Button = Button(cx - 100, cy - 100, 200, 60, "Quit", self._font_btn, self.quit_game)
+        self._btn_play: Button = Button(cx - 100, cy + self._title.get_height() + 50, 200, 60, "Play", self._font_btn, self.start_game)
+        self._btn_quit: Button = Button(cx - 100, cy + self._title.get_height() + 140, 200, 60, "Quit", self._font_btn, self.quit_game)
         
     def start_game(self):
         self.engine.change_state(PlayState(self.engine))
